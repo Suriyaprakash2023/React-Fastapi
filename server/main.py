@@ -1,0 +1,144 @@
+from fastapi import FastAPI,APIRouter,HTTPException,status,Depends,Form,UploadFile,File
+from fastapi.middleware.cors import CORSMiddleware
+from model import User
+from database import SessionLocal,get_db
+from pydantic import BaseModel,EmailStr
+from sqlalchemy.orm import Session
+from schema import UserLogin,UserOut
+from funtions import hash_password,verify_password,create_access_token,ACCESS_TOKEN_EXPIRE_MINUTES
+from  datetime import date
+import datetime
+from typing import Optional
+from fastapi.security import OAuth2PasswordBearer
+import jwt
+
+app=FastAPI()
+router = APIRouter()
+app.include_router(router,  tags=["users"])
+
+app.add_middleware(
+  CORSMiddleware,
+  allow_credentials = True,
+  allow_origins=["http://localhost:5173"],
+  allow_methods=["*"],
+  allow_headers=["*"],
+)
+
+
+
+
+class UserResponse(BaseModel):
+    username: str
+    email: str
+    mobile_number: str
+    message: str
+
+
+
+@app.post("/register")
+async def user_register(
+    userName: str = Form(...), 
+    email: str = Form(...), 
+    password: str = Form(...), 
+    mobile_number: str = Form(...),
+    dateOfBirth: Optional[date] = Form(None),
+    profilePic: UploadFile = File(...),  # File upload for userPic
+    db: Session = Depends(get_db)
+):
+    # Check if the email already exists in the database
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Hash the password before saving
+    hashed_password = hash_password(password)
+
+    # Read the file content (the uploaded picture)
+    file_content = await profilePic.read()  # Read the file as binary
+
+    # Create the user object to store in the database
+    db_user = User(
+        username=userName,
+        email=email,
+        password=hashed_password,
+        mobile_number=mobile_number,
+        dateOfBirth=dateOfBirth,
+        userPic=file_content  # Store the file as binary data
+    )
+
+    # Save the user to the database
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    return {"message": "User created successfully"}
+
+
+@app.post("/login")
+async def login_view(user:UserLogin,db:Session=Depends(get_db)):
+  db_user = db.query(User).filter(User.email == user.email).first()
+  if not db_user:
+      raise HTTPException(status_code=400, detail="Invalid credentials.")
+  
+  if not verify_password(user.password,db_user.password):
+     raise HTTPException(status_code=400,detail="Password is not Defind...")
+  
+  access_token_expires = datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+  access_token = create_access_token(data={"sub":db_user.email},expires_delta=access_token_expires)
+
+  return {"access_token":access_token,"token_type":"bearer"}
+
+# Route to get the currently authenticated user
+# Dummy function to simulate getting a user from the database
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+
+from funtions import SECRET_KEY, ALGORITHM,oauth2_scheme
+# Dummy user for testing
+fake_users_db = {
+    "johndoe@example.com": {"id": 1, "email": "johndoe@example.com", "username": "johndoe", "password": "hashed_password"}
+}
+
+def get_user_from_token(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    
+@app.get("/users/me", response_model=UserOut)
+async def read_users_me(current_user: User = Depends(get_user_from_token)):
+
+    return current_user
+
+ # Pydantic will handle the serialization automatically
+
+# Token route to login user and get a JWT token
+# @app.post("/token")
+# async def login_for_access_token(form_data: OAuth2PasswordBearer = Depends()):
+
+#     if user and verify_password(form_data.password, user['hashed_password']):
+#         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+#         access_token = create_access_token(
+#             data={"sub": form_data.username}, expires_delta=access_token_expires
+#         )
+#         return {"access_token": access_token, "token_type": "bearer"}
+#     raise HTTPException(
+#         status_code=status.HTTP_401_UNAUTHORIZED,
+#         detail="Incorrect username or password",
+#         headers={"WWW-Authenticate": "Bearer"},
+    # )
