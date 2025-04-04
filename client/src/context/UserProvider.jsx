@@ -1,14 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from './data';
-
+import { useNavigate } from 'react-router-dom';
 // Create a context for the user state
 const UserContext = createContext();
 
 // Create a provider component
 export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-
+    const navigate = useNavigate();
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
@@ -41,6 +41,7 @@ export const UserProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem("token");
         setUser(null);
+        navigate('/');
     };
 
     return (

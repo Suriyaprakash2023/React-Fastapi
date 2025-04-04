@@ -1,6 +1,13 @@
-import React from 'react'
-
+import React,{useState} from 'react'
+import { useUser } from '../context/UserProvider'; 
 const SideNavContact = () => {
+    const [isVisible, setIsVisible] = useState(true);
+    const { user, logout } = useUser();
+      // Function to toggle the visibility
+    const toggleVisibility = () => {
+        setIsVisible(!isVisible);
+    };
+    
   return (
     <>
        <div className="col-xxl-3 col-xl-3 col-lg-4 col-6 mt-5 mt-xl-0">
@@ -8,10 +15,10 @@ const SideNavContact = () => {
                         <div className="d-flex justify-content-end mb-4">
                             <button className="button contact-active mb-4 mb-lg-0 d-flex align-items-center gap-2">
                                 <span>My contact</span>
-                                <i className="material-symbols-outlined mat-icon"> tune </i>
+                                <i onClick={toggleVisibility} className="material-symbols-outlined mat-icon"> tune </i>
                             </button>
                         </div>
-                        <div className="cus-scrollbar contact-sidebar">
+                        <div  className={`cus-scrollbar contact-sidebar ${!isVisible ? 'active' : ''}`}>
                             <div className="sidebar-wrapper d-flex al-item justify-content-end justify-content-xl-center flex-column flex-md-row flex-xl-column flex gap-6">
                                 <div className="d-block d-lg-none position-absolute end-0 top-0">
                                     <button className="button contact-close">

@@ -1,20 +1,54 @@
-import React from 'react'
+import React,{useState} from 'react'
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserProvider'; // Adjust path as necessary
 
 const Header = () => {
 
   const { user, logout } = useUser();
-  
+
+  const [messageVisible, setMessageVisible] = useState(false);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+
+
+    // State to track the current mode (dark or light)
+    const [isDarkMode, setIsDarkMode] = useState(true);  // Set default to dark mode
+
+    // Function to toggle between dark and light mode
+    const toggleMode = () => {
+      setIsDarkMode(!isDarkMode);
+    };
+
+
+  // Function to toggle message visibility
+  const toggleMessageVisibility = () => {
+    setMessageVisible(true);
+    setNotificationVisible(false);
+    setProfileVisible(false);
+  };
+
+  // Function to toggle notification visibility
+  const toggleNotificationVisibility = () => {
+    setNotificationVisible(true);
+    setMessageVisible(false);
+    setProfileVisible(false);
+  };
+
+  // Function to toggle profile visibility
+  const toggleProfileVisibility = () => {
+    setProfileVisible(true);
+    setMessageVisible(false);
+    setNotificationVisible(false);
+  }
   return (
     <>
        <header className="header-section header-menu">
         <nav className="navbar navbar-expand-lg p-0">
             <div className="container-fluid">
                 <nav className="navbar w-100 navbar-expand-lg justify-content-betweenm">
-                    <a  className="navbar-brand">
-                        <img src="/src/assets/logo-icon.png" style={{height:"50px"}} className="logo" alt="logo"/>
-                    </a>
+                    <Link to="/index"  className="navbar-brand">
+                        <img src="/src/assets/logo-icon.png"  style={{height:"50px", cursor: 'pointer'}} className="logo" alt="logo"/>
+                    </Link>
                     <button className="button search-active d-block d-md-none">
                         <i className="d-center material-symbols-outlined fs-xxl mat-icon"> search </i>
                     </button>
@@ -39,13 +73,14 @@ const Header = () => {
                         </li>
                     </ul>
                     <div className="right-area position-relative d-flex gap-3 gap-xxl-6 align-items-center">
-                        <div className="single-item d-none d-lg-block messages-area">
+                        <div  className={`single-item d-none d-lg-block messages-area ${messageVisible ? 'active' : ''}`}>
                             <div className="messages-btn cmn-head">
                                 <div className="icon-area d-center position-relative">
-                                    <i className="material-symbols-outlined mat-icon">mail</i>
+                                    <i onClick={toggleMessageVisibility} className="material-symbols-outlined mat-icon">mail</i>
                                     <span className="abs-area position-absolute d-center mdtxt">4</span>
                                 </div>
                             </div>
+                  
                             <div className="main-area p-5 messages-content">
                                 <h5 className="mb-8">Messages</h5>
                                 <div className="single-box p-0 mb-7">
@@ -132,18 +167,19 @@ const Header = () => {
                                     <a >See all inbox</a>
                                 </div>
                             </div>
+                          
                         </div>
-                        <div className="single-item d-none d-lg-block messages-area notification-area">
+                        <div className={`single-item d-none d-lg-block messages-area notification-area ${notificationVisible ? 'active' : ''}`}>
                             <div className="notification-btn cmn-head position-relative">
                                 <div className="icon-area d-center position-relative">
-                                    <i className="material-symbols-outlined mat-icon">notifications</i>
+                                    <i onClick={toggleNotificationVisibility} className="material-symbols-outlined mat-icon">notifications</i>
                                     <span className="abs-area position-absolute d-center mdtxt">3</span>
                                 </div>
                             </div>
                             <div className="main-area p-5 notification-content">
                                 <h5 className="mb-8">Notification</h5>
                                 <div className="single-box p-0 mb-7">
-                                    <a href="profile-notification.html" className="d-flex justify-content-between align-items-center">
+                                    <a className="d-flex justify-content-between align-items-center">
                                         <div className="left-item position-relative d-inline-flex gap-3">
                                             <div className="avatar position-relative d-inline-flex">
                                                 <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar"/>
@@ -218,9 +254,9 @@ const Header = () => {
                                     <a >See all notification</a>
                                 </div>
                             </div>
-                        </div>
-                        <div className="single-item d-none d-lg-block profile-area position-relative">
-                            <div className="profile-pic d-flex align-items-center">
+                        </div> 
+                        <div className={`single-item d-none d-lg-block profile-area position-relative ${profileVisible ? 'active' : ''}`}>
+                            <div onClick={toggleProfileVisibility} className="profile-pic d-flex align-items-center">
                                 <span className="avatar cmn-head active-status">
                                     <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar"/>
                                 </span>
@@ -232,14 +268,16 @@ const Header = () => {
                                             <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar"/>
                                         </div>
                                         <div className="text-area">
-                                            <h6 className="m-0 mb-1">Lori Ferguson</h6>
+                                            <h6 className="m-0 mb-1">{user.username}</h6>
                                             <p className="mdtxt">Web Developer</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="view-profile my-2">
-                                    <a  className="mdtxt w-100 text-center py-2">View profile</a>
+                                
+                                <div style={{ cursor: 'pointer' }}  className="view-profile my-2">
+                                    <Link to="/profile"  className="mdtxt w-100 text-center py-2">View profile</Link>
                                 </div>
+                                
                                 <ul>
                                     <li>
                                         <Link to="/edit-profile"  className="mdtxt">
@@ -248,20 +286,39 @@ const Header = () => {
                                         </Link>
                                     </li>
                                     <li>
-                                        <a  className="mdtxt">
+                                        <a onClick={logout} style={{ cursor: 'pointer' }} className="mdtxt">
                                             <i className="material-symbols-outlined mat-icon"> power_settings_new </i>
                                             Sign Out
                                         </a>
                                     </li>
                                 </ul>
                                 <div className="switch-wrapper mt-4 d-flex gap-1 align-items-center">
-                                    <i className="mat-icon material-symbols-outlined sun icon"> light_mode </i>
-                                    <label className="switch">
-                                        <input type="checkbox" className="checkbox"/>
-                                        <span className="slider"></span>
-                                    </label>
-                                    <i className="mat-icon material-symbols-outlined moon icon"> dark_mode </i>
-                                    <span className="mdtxt ms-2">Dark mode</span>
+                                {/* Sun icon for light mode, active when in light mode */}
+                                <i 
+                                    className={`mat-icon material-symbols-outlined sun icon ${!isDarkMode ? 'active' : ''}`}
+                                >
+                                    light_mode
+                                </i>
+
+                                {/* Switch toggle */}
+                                <label className="switch">
+                                    <input 
+                                    type="checkbox" 
+                                    className="checkbox" 
+                                    checked={!isDarkMode}  // If it's light mode, checkbox is checked
+                                    onChange={toggleMode}  // Toggle on change
+                                    />
+                                    <span className="slider"></span>
+                                </label>
+
+                                {/* Moon icon for dark mode, active when in dark mode */}
+                                <i 
+                                    className={`mat-icon material-symbols-outlined moon icon ${isDarkMode ? 'active' : ''}`}
+                                >
+                                    dark_mode
+                                </i>
+
+                                <span className="mdtxt ms-2">Dark mode</span>
                                 </div>
                             </div>
                         </div>
