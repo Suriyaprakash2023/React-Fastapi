@@ -4,15 +4,32 @@ from fastapi import UploadFile
 from typing import Optional
 import re
 import base64
+# Pydantic schema for User
+import base64
+from typing import Optional
+from datetime import date
+from pydantic import BaseModel
 
 # Pydantic model for user registration
-# class UserRegister(BaseModel):
-#     username: str
-#     email: EmailStr
-#     password: str
-#     mobile_number: str
-#     dateOfBirth: Optional[date]
-#     profilePic: Optional[UploadFile]  # For file uploads
+class RegisterSchema(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    mobile_number: str
+    dateOfBirth: Optional[date] = None
+    profilePic: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "john_doe",
+                "email": "john.doe@example.com",
+                "password": "securepassword123",
+                "mobile_number": "+1234567890",
+                "dateOfBirth": "1990-01-01",
+                "profilePic": "data:image/png;base64,iVBORw0KGgo..."
+            }
+        }
 
 class UserResponse(BaseModel):
     username: str
@@ -23,60 +40,51 @@ class UserResponse(BaseModel):
     class Config:
         orm_mode = True
 
-# Pydantic schema for User
+
 class UserOut(BaseModel):
     id: int
     username: str
     email: str
     mobile_number: Optional[str] = None
     dateOfBirth: Optional[date] = None
-    userPic: Optional[str] = None  # This will store base64 encoded image
-
+    userPic: Optional[str] = None  # Base64 encoded image
+    profile_pic_type: Optional[str] = None
+    
     class Config:
         orm_mode = True
-
+    
     @classmethod
     def from_orm(cls, user):
-        user_dict = user.__dict__.copy()  # Create a copy to avoid modifying the original
+        user_dict = user.__dict__.copy()
         
-        # Handle userPic conversion only if it exists
-        if user_dict.get("userPic"):
-            user_dict["userPic"] = base64.b64encode(user_dict["userPic"]).decode('utf-8')
+        # Convert userPic from bytes to base64 string
+        if user_dict.get("userPic") is not None:
+            try:
+                if isinstance(user_dict["userPic"], bytes):
+                    # Encode bytes to base64 and decode to UTF-8 string
+                    user_dict["userPic"] = base64.b64encode(user_dict["userPic"]).decode('utf-8')
+                else:
+                    print(f"Warning: userPic is not bytes, got {type(user_dict['userPic'])}")
+                    user_dict["userPic"] = None
+            except Exception as e:
+                print(f"Error encoding userPic to base64: {e}")
+                user_dict["userPic"] = None
         
-        # Ensure dateOfBirth is properly handled
-        if user_dict.get("dateOfBirth") is None:
+        # Ensure dateOfBirth is in the correct format
+        if user_dict.get("dateOfBirth") is not None and not isinstance(user_dict["dateOfBirth"], date):
+            print(f"Warning: dateOfBirth is not a date object: {type(user_dict['dateOfBirth'])}")
             user_dict["dateOfBirth"] = None
-            
-        return super().from_orm(user)
-    
-    # # Username validation
-    # @field_validator('username')
-    # @classmethod
-    # def username_validation(cls, v: str) -> str:
-    #     if len(v) < 3 or len(v) > 50:
-    #         raise ValueError('Username must be between 3 and 50 characters')
-    #     if not v.isalnum():
-    #         raise ValueError('Username must contain only alphanumeric characters')
-    #     return v
-
-    # # Password validation
-    # @field_validator('password')
-    # @classmethod
-    # def password_validation(cls, v: str) -> str:
-    #     if len(v) < 8:
-    #         raise ValueError('Password must be at least 8 characters')
-    #     return v
-
-    # # Mobile number validation
-    # @field_validator('mobile_number')
-    # @classmethod
-    # def mobile_validation(cls, v: str) -> str:
-    #     pattern = r'^\+?[1-9]\d{9,14}$'  # Basic international phone number validation
-    #     if not re.match(pattern, v):
-    #         raise ValueError('Invalid mobile number format')
-    #     return v
+        
+        return cls(**user_dict)
     
 
 class UserLogin(BaseModel):
   email:EmailStr  
   password:str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    mobile_number: Optional[str] = None
+    dateOfBirth: Optional[date] = None
+    profilePic: Optional[str] = None  # Base64 encoded image
+    coverPic: Optional[str] = None  # Base64 encoded image

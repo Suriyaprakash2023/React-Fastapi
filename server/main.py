@@ -33,8 +33,6 @@ class UserResponse(BaseModel):
     mobile_number: str
     message: str
 
-
-
 @app.post("/register")
 async def user_register(
     userName: str = Form(...), 
@@ -42,7 +40,7 @@ async def user_register(
     password: str = Form(...), 
     mobile_number: str = Form(...),
     dateOfBirth: Optional[date] = Form(None),
-    profilePic: UploadFile = File(...),  # File upload for userPic
+    profilePic: UploadFile = File(None),  # Make file optional with default=None
     db: Session = Depends(get_db)
 ):
     # Check if the email already exists in the database
@@ -53,8 +51,28 @@ async def user_register(
     # Hash the password before saving
     hashed_password = hash_password(password)
 
-    # Read the file content (the uploaded picture)
-    file_content = await profilePic.read()  # Read the file as binary
+    # Initialize variables for profile pic
+    file_content = None
+    mime_type = None
+    
+    # Process the profile picture if provided
+    if profilePic:
+        # Validate file size (5MB limit)
+        file_size = 0
+        MAX_SIZE = 10 * 1024 * 1024  # 5MB
+        
+        content = await profilePic.read()
+        file_size = len(content)
+        
+        if file_size > MAX_SIZE:
+            raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+        
+        # Validate file type
+        mime_type = profilePic.content_type
+        if not mime_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        file_content = content
 
     # Create the user object to store in the database
     db_user = User(
@@ -63,7 +81,8 @@ async def user_register(
         password=hashed_password,
         mobile_number=mobile_number,
         dateOfBirth=dateOfBirth,
-        userPic=file_content  # Store the file as binary data
+        userPic=file_content,  # May be None if no file was uploaded
+        profile_pic_type=mime_type
     )
 
     # Save the user to the database
@@ -72,6 +91,23 @@ async def user_register(
     db.refresh(db_user)
 
     return {"message": "User created successfully"}
+
+
+import io
+from fastapi.responses import StreamingResponse
+
+
+@app.get("/users/{user_id}/profile-pic")
+async def get_user_profile_pic(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.userPic:
+        raise HTTPException(status_code=404, detail="Profile picture not found")
+    
+    # Return as a StreamingResponse for better performance with large images
+    return StreamingResponse(
+        io.BytesIO(user.userPic),
+        media_type=user.profile_pic_type or "image/jpeg"
+    )
 
 
 @app.post("/login")
@@ -121,24 +157,62 @@ def get_user_from_token(
 
     
 @app.get("/users/me", response_model=UserOut)
-async def read_users_me(current_user: User = Depends(get_user_from_token)):
+async def read_users_me(current_user: User = Depends(get_user_from_token), db: Session = Depends(get_db)):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
+    
+    try:
+        # Refresh the user from the database to ensure latest data
+        db.refresh(current_user)
+        # Explicitly convert to UserOut to ensure proper transformation
+        return UserOut.from_orm(current_user)
+    except Exception as e:
+        print(f"Error retrieving user: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve user data: {str(e)}"
+        )
 
-    return current_user
 
- # Pydantic will handle the serialization automatically
+@app.patch("/edit-profile", response_model=UserOut)
+async def update_user(
+    username: Optional[str] = None,
+    mobile_number: Optional[str] = None,
+    dateOfBirth: Optional[date] = None,
+    profilePic: UploadFile = File(None),
+    coverPic: UploadFile = File(None),
+    current_user: User = Depends(get_user_from_token),
+    db: Session = Depends(get_db)
+):
+    # Update only provided fields
+    if username:
+        current_user.username = username
+    if mobile_number:
+        current_user.mobile_number = mobile_number
+    if dateOfBirth:
+        current_user.dateOfBirth = dateOfBirth
+    
+    # Handle profile picture upload
+    if profilePic:
+        file_content = await profilePic.read()
+        if len(file_content) > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+        if not profilePic.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        current_user.userPic = file_content
+        current_user.profile_pic_type = profilePic.content_type
 
-# Token route to login user and get a JWT token
-# @app.post("/token")
-# async def login_for_access_token(form_data: OAuth2PasswordBearer = Depends()):
+    if coverPic:
+        coverPic_file_content = await coverPic.read()
+        if len(coverPic_file_content) > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+        if not coverPic.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        current_user.coverPic = coverPic_file_content
 
-#     if user and verify_password(form_data.password, user['hashed_password']):
-#         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-#         access_token = create_access_token(
-#             data={"sub": form_data.username}, expires_delta=access_token_expires
-#         )
-#         return {"access_token": access_token, "token_type": "bearer"}
-#     raise HTTPException(
-#         status_code=status.HTTP_401_UNAUTHORIZED,
-#         detail="Incorrect username or password",
-#         headers={"WWW-Authenticate": "Bearer"},
-    # )
+    db.commit()
+    db.refresh(current_user)
+    return UserOut.from_orm(current_user)
