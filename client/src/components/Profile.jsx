@@ -41,7 +41,7 @@ const Profile = () => {
                                 <div className="d-flex gap-3 align-items-center">
                                     <div className="avatar-item p">
                                         <img className="avatar-img max-un rounded-circle" 
-                                        src={profilePicSrc}
+                                        src={user.userPic}
                                          alt="avatar"
                                             style={{ Width: '50px', maxHeight: '100px' }} // Optional styling
                                          />

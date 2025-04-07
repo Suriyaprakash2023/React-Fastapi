@@ -76,7 +76,7 @@ const Header = () => {
                             <a href="#news-feed" className="nav-icon feed"><i className="mat-icon fs-xxl material-symbols-outlined mat-icon">feed</i></a>
                         </li>
                         <li>
-                            <a  className="nav-icon"><i className="mat-icon fs-xxl material-symbols-outlined mat-icon">group</i></a>
+                            <Link to="/friends"   className="nav-icon"><i className="mat-icon fs-xxl material-symbols-outlined mat-icon">group</i></Link>
                         </li>
                         <li>
                             <a  className="nav-icon"><i className="mat-icon fs-xxl material-symbols-outlined mat-icon">smart_display</i></a>
@@ -270,7 +270,7 @@ const Header = () => {
                                 <span className="avatar cmn-head active-status">
                                     <img
                                         className="avatar-img max-un rounded-circle"
-                                        src={profilePicSrc}
+                                        src={user.userPic}
                                         alt={user.userPic ? "User Avatar" : "Default Avatar"}
                                         style={{ Width: '50px !important', maxHeight: '50px' }} // Optional styling
                                     />
@@ -282,7 +282,7 @@ const Header = () => {
                                         <div className="avatar-item">
                                             <img
                                             className="avatar-img max-un "
-                                            src={profilePicSrc}
+                                            src={user.userPic}
                                             alt={user.userPic ? "User Avatar" : "Default Avatar"}
                                             style={{ maxWidth: '200px', maxHeight: '50px' }} // Optional styling
                                             />

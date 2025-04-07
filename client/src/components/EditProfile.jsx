@@ -148,10 +148,19 @@ const EditProfile = () => {
             setErrorMessage(null);
             // Update global user state
             refreshUser(token);
+
+            setTimeout(() => {
+                setSuccessMessage(null);
+              }, 5000);
+              
         } catch (error) {
             console.error('Error updating profile:', error.response?.data || error);
             setErrorMessage(error.response?.data?.detail || 'Failed to update profile');
             setSuccessMessage(null);
+
+            setTimeout(() => {
+                setErrorMessage(null);
+              }, 5000);
         }
     };
 
@@ -182,7 +191,7 @@ const EditProfile = () => {
                                     <div className="avatar position-relative">
                                         <img
                                             className="avatar-img max-un rounded-circle"
-                                            src={profilePicSrc}
+                                            src={previewProfilePic || profilePicSrc}
                                             style={{ width: '50px', maxHeight: '50px' }}
                                             alt="avatar"
                                         />
@@ -317,11 +326,23 @@ const EditProfile = () => {
                                     </div>
                                 </div>
                                 <div className="single-box text-start p-sm-5 p-3">
+                                
+
+                                    {successMessage && (
+                                    <div className="alert alert-success text-white mb-3" style={{ backgroundColor: '#28b528' }}>
+                                        {successMessage}
+                                    </div>
+                                    )}
+
+                                    {errorMessage && (
+                                    <div className="alert alert-danger text-white mb-3" style={{ backgroundColor: '#ff4d4d' }}>
+                                        {errorMessage}
+                                    </div>
+                                    )}
                                     <div className="head-area mb-6">
                                         <h6>General Information</h6>
                                     </div>
-                                    {successMessage && <div className="success">{successMessage}</div>}
-                                    {errorMessage && <div className="error">{errorMessage}</div>}
+                                    
                                     <div className="text-center d-grid gap-4">
                                         <div className="row">
                                             <div className="col-sm-6">

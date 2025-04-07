@@ -5,6 +5,9 @@ import Login from './components/Login';
 import Index from './components/index';
 import Profile from './components/Profile';
 import EditProfile from './components/EditProfile';
+import Friends from './components/friends/Friends';
+import FriendsRequest from './components/friends/FriendRequest';
+import Suggestions from './components/friends/Suggestions';
 function App() {
 
 
@@ -17,6 +20,9 @@ function App() {
           <Route path='/index' element={<Index/>}/>
           <Route path='/profile' element={<Profile/>}/>
           <Route path='/edit-profile' element={<EditProfile/>}/>
+          <Route path='/friends' element={<Friends/>}/>
+          <Route path='/suggestions' element={<Suggestions/>}/>
+          <Route path='/friend-request' element={<FriendsRequest/>}/>
         </Routes>
 
     </>

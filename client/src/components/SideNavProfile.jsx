@@ -10,10 +10,12 @@ const SideNavProfile = () => {
     return <div>Loading user data...</div>;
 }
 
-  // Construct the data URL for the profile picture if it exists
-  const profilePicSrc = user.userPic && user.profile_pic_type
-      ? `data:${user.profile_pic_type};base64,${user.userPic}`
-      : '/src/assets/images/avatar-1.png';
+
+  // Construct profile picture source with safe access
+  const profilePicSrc = user && user.userPic && user.profile_pic_type
+  ? `data:${user.profile_pic_type};base64,${user.userPic}`
+  : '/src/assets/images/avatar-1.png';
+
       
   // Function to toggle the visibility
   const toggleVisibility = () => {
@@ -42,7 +44,7 @@ const SideNavProfile = () => {
               <div className="avatar position-relative">
                 <img
                   className="avatar-img max-un rounded-circle"
-                  src={profilePicSrc}
+                  src={user.userPic}
                   alt={user.userPic ? "User Avatar" : "Default Avatar"}
                   style={{ Width: '50px', maxHeight: '50px' }} // Optional styling
                 />
@@ -55,16 +57,16 @@ const SideNavProfile = () => {
           </Link>
           <ul className="profile-link mt-7 mb-7 pb-7">
             <li>
-              <Link to="/index" className="d-flex gap-4">
+              <Link to="/index" className={`d-flex gap-4 ${location.pathname === '/index' ? 'active' : ''}`}>
                 <i className="material-symbols-outlined mat-icon">home</i>
                 <span>Home</span>
               </Link>
             </li>
             <li>
-              <a className="d-flex gap-4">
+              <Link to="/friends" className={`d-flex gap-4 ${location.pathname === '/friends' ? 'active' : ''}`}a className="d-flex gap-4">
                 <i className="material-symbols-outlined mat-icon">person</i>
                 <span>People</span>
-              </a>
+              </Link>
             </li>
             <li>
               <a className="d-flex gap-4">

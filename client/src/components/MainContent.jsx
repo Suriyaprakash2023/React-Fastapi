@@ -11,6 +11,8 @@ const MainContent = () => {
     const profilePicSrc = user && user.userPic && user.profile_pic_type
     ? `data:${user.profile_pic_type};base64,${user.userPic}`
     : '/src/assets/images/avatar-1.png';
+
+    
     useEffect(() => {
         const fetchUserData = async () => {
             try {

@@ -35,13 +35,15 @@ class FriendshipStatus(str, enum.Enum):
     pending = "pending"
     accepted = "accepted"
     rejected = "rejected"
+    blocked = "blocked"
+    send_request = "send_request"
 
 class Friendship(Base):
     __tablename__ = "friendships"
 
     id = Column(Integer, primary_key=True, index=True)
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    receiver_id = Column(Integer, ForeignKey("users.id"))
+    sender_id = Column(Integer, ForeignKey("user.id"))
+    receiver_id = Column(Integer, ForeignKey("user.id"))
     status = Column(Enum(FriendshipStatus), default=FriendshipStatus.pending)
     created_at = Column(DateTime, default=datetime.utcnow)
 

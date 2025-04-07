@@ -1,16 +1,21 @@
 from fastapi import FastAPI,APIRouter,HTTPException,status,Depends,Form,UploadFile,File
 from fastapi.middleware.cors import CORSMiddleware
-from model import User
+from model import User,Friendship,FriendshipStatus
 from database import SessionLocal,get_db
 from pydantic import BaseModel,EmailStr
 from sqlalchemy.orm import Session
-from schema import UserLogin,UserOut
+from schema import UserLogin,UserOut,OtherUser
 from funtions import hash_password,verify_password,create_access_token,ACCESS_TOKEN_EXPIRE_MINUTES
 from  datetime import date
 import datetime
 from typing import Optional
 from fastapi.security import OAuth2PasswordBearer
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+from typing import List
+from funtions import SECRET_KEY, ALGORITHM,oauth2_scheme
 
 app=FastAPI()
 router = APIRouter()
@@ -127,11 +132,7 @@ async def login_view(user:UserLogin,db:Session=Depends(get_db)):
 # Route to get the currently authenticated user
 # Dummy function to simulate getting a user from the database
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
 
-from funtions import SECRET_KEY, ALGORITHM,oauth2_scheme
 # Dummy user for testing
 fake_users_db = {
     "johndoe@example.com": {"id": 1, "email": "johndoe@example.com", "username": "johndoe", "password": "hashed_password"}
@@ -216,3 +217,59 @@ async def update_user(
     db.commit()
     db.refresh(current_user)
     return UserOut.from_orm(current_user)
+
+
+
+@app.get("/with-others", response_model=List[OtherUser])
+def get_other_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_user_from_token)
+):
+    users = db.query(User).filter(User.id != current_user.id).all()
+    return [OtherUser.from_orm(u) for u in users]  
+
+
+@app.post("/send-request/{receiver_id}")
+def send_friend_request(
+    receiver_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_user_from_token)
+):
+    # Check if request already exists
+    existing = db.query(Friendship).filter_by(
+        sender_id=current_user.id,
+        receiver_id=receiver_id
+    ).first()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Request already sent")
+
+    request = Friendship(
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        status='send_request'
+    )
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    return {"message": "Friend request sent", "request_id": request.id}
+
+
+@app.delete("/cancel-request/{receiver_id}")
+def cancel_friend_request(
+    receiver_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_user_from_token)
+):
+    request = db.query(Friendship).filter_by(
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        status=FriendshipStatus.send_request
+    ).first()
+
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    db.delete(request)
+    db.commit()
+    return {"message": "Request cancelled"}
