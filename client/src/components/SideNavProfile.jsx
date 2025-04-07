@@ -5,6 +5,16 @@ import { useUser } from '../context/UserProvider'; // Adjust path as necessary
 const SideNavProfile = () => {
   const [isVisible, setIsVisible] = useState(true);
   const { user, logout } = useUser();
+
+  if (!user) {
+    return <div>Loading user data...</div>;
+}
+
+  // Construct the data URL for the profile picture if it exists
+  const profilePicSrc = user.userPic && user.profile_pic_type
+      ? `data:${user.profile_pic_type};base64,${user.userPic}`
+      : '/src/assets/images/avatar-1.png';
+      
   // Function to toggle the visibility
   const toggleVisibility = () => {
     setIsVisible(!isVisible);
@@ -30,7 +40,12 @@ const SideNavProfile = () => {
           <Link to="/profile">
             <div className="profile-pic d-flex gap-2 align-items-center">
               <div className="avatar position-relative">
-                <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar" />
+                <img
+                  className="avatar-img max-un rounded-circle"
+                  src={profilePicSrc}
+                  alt={user.userPic ? "User Avatar" : "Default Avatar"}
+                  style={{ Width: '50px', maxHeight: '50px' }} // Optional styling
+                />
               </div>
               <div className="text-area">
                 <h6 className="m-0 mb-1"><a>{user.username}</a></h6>

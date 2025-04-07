@@ -6,7 +6,11 @@ import { useUser } from '../context/UserProvider'; // Adjust path as necessary
 const MainContent = () => {
 
     const [user, setUser] = useState(null);
-
+   
+    // Construct profile picture source with safe access
+    const profilePicSrc = user && user.userPic && user.profile_pic_type
+    ? `data:${user.profile_pic_type};base64,${user.userPic}`
+    : '/src/assets/images/avatar-1.png';
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -35,7 +39,14 @@ const MainContent = () => {
                     
                     <div className="share-post d-flex gap-3 gap-sm-5 p-3 p-sm-5">
                         <div className="profile-box">
-                            <a href="#"><img src="/src/assets/images/add-post-avatar.png" className="max-un" alt="icon"/></a>
+                            <a >
+                                <img 
+                                className="max-un rounded-circle w-100"
+                                alt="icon"
+                                src={profilePicSrc}
+                                style={{ Width:'60px !important', maxHeight: '50px' }}
+                              />
+                            </a>
                         </div>
                         <form action="#" className="w-100 position-relative">
                             <textarea cols="10" rows="2" placeholder="Write something to Lerio.."></textarea>

@@ -1,8 +1,22 @@
 import React from 'react'
 import Header from './Header'
 import { Link } from 'react-router-dom'
-import SideNavProfile from './SideNavProfile'
+import SideNavProfile from './SideNavProfile';
+import { useUser } from '../context/UserProvider'; // Adjust path as necessary
+
 const Profile = () => {
+
+  const { user, logout } = useUser();
+
+  if (!user) {
+    return <div>Loading user data...</div>;
+}
+
+  // Construct the data URL for the profile picture if it exists
+  const profilePicSrc = user.userPic && user.profile_pic_type
+      ? `data:${user.profile_pic_type};base64,${user.userPic}`
+      : '/src/assets/images/avatar-1.png';
+    
   return (
     <>
        {/* <!-- header-section start --> */}
@@ -26,10 +40,14 @@ const Profile = () => {
                             <div className="top-area py-4 d-center flex-wrap gap-3 justify-content-between align-items-start">
                                 <div className="d-flex gap-3 align-items-center">
                                     <div className="avatar-item p">
-                                        <img className="avatar-img max-un" src="/src/assets/images/avatar-14.png" alt="avatar"/>
+                                        <img className="avatar-img max-un rounded-circle" 
+                                        src={profilePicSrc}
+                                         alt="avatar"
+                                            style={{ Width: '50px', maxHeight: '100px' }} // Optional styling
+                                         />
                                     </div>
                                     <div className="text-area text-start">
-                                        <h4 className="m-0 mb-2">Lerio Mao</h4>
+                                        <h4 className="m-0 mb-2">{user.username}</h4>
                                         <div className="friends-list d-flex flex-wrap gap-2 align-items-center text-center">
                                             <ul className="d-flex align-items-center justify-content-center">
                                                 <li><img src="/src/assets/images/avatar-3.png" alt="avatar"/></li>

@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 import axios from 'axios';
 import Alert from '@mui/material/Alert';
 import CheckIcon from '@mui/icons-material/Check';
+import { BASE_URL } from '../context/data';
 const Register = () => {
     const [userName, setuserName] = useState("");
     const [mobile_number, setmobile_number] = useState(""); // Renamed to match backend
@@ -29,7 +30,7 @@ const Register = () => {
       console.log("User data:", userData);
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8003/register",
+          `${BASE_URL}/register`,
           userData,
           {
             headers: {

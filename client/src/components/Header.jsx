@@ -5,7 +5,7 @@ import { useUser } from '../context/UserProvider'; // Adjust path as necessary
 const Header = () => {
 
   const { user, logout } = useUser();
-
+   
   const [messageVisible, setMessageVisible] = useState(false);
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [profileVisible, setProfileVisible] = useState(false);
@@ -40,6 +40,16 @@ const Header = () => {
     setMessageVisible(false);
     setNotificationVisible(false);
   }
+
+  if (!user) {
+    return <div>Loading user data...</div>;
+}
+
+  // Construct the data URL for the profile picture if it exists
+  const profilePicSrc = user.userPic && user.profile_pic_type
+      ? `data:${user.profile_pic_type};base64,${user.userPic}`
+      : '/src/assets/images/avatar-1.png';
+      
   return (
     <>
        <header className="header-section header-menu">
@@ -258,17 +268,27 @@ const Header = () => {
                         <div className={`single-item d-none d-lg-block profile-area position-relative ${profileVisible ? 'active' : ''}`}>
                             <div onClick={toggleProfileVisibility} className="profile-pic d-flex align-items-center">
                                 <span className="avatar cmn-head active-status">
-                                    <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar"/>
+                                    <img
+                                        className="avatar-img max-un rounded-circle"
+                                        src={profilePicSrc}
+                                        alt={user.userPic ? "User Avatar" : "Default Avatar"}
+                                        style={{ Width: '50px !important', maxHeight: '50px' }} // Optional styling
+                                    />
                                 </span>
                             </div>
                             <div className="main-area p-5 profile-content">
                                 <div className="head-area">
                                     <div className="d-flex gap-3 align-items-center">
                                         <div className="avatar-item">
-                                            <img className="avatar-img max-un" src="/src/assets/images/avatar-1.png" alt="avatar"/>
+                                            <img
+                                            className="avatar-img max-un "
+                                            src={profilePicSrc}
+                                            alt={user.userPic ? "User Avatar" : "Default Avatar"}
+                                            style={{ maxWidth: '200px', maxHeight: '50px' }} // Optional styling
+                                            />
                                         </div>
                                         <div className="text-area">
-                                            <h6 className="m-0 mb-1">{user.username}</h6>
+                                            <h6 className="m-0 mb-1">{user.username ?? '' }</h6>
                                             <p className="mdtxt">Web Developer</p>
                                         </div>
                                     </div>
