@@ -8,6 +8,7 @@ import EditProfile from './components/EditProfile';
 import Friends from './components/friends/Friends';
 import FriendsRequest from './components/friends/FriendRequest';
 import Suggestions from './components/friends/Suggestions';
+import UserProfile from './components/friends/UserProfile';
 function App() {
 
 
@@ -23,6 +24,7 @@ function App() {
           <Route path='/friends' element={<Friends/>}/>
           <Route path='/suggestions' element={<Suggestions/>}/>
           <Route path='/friend-request' element={<FriendsRequest/>}/>
+          <Route path='/user-profile/:id' element={<UserProfile/>}/>
         </Routes>
 
     </>

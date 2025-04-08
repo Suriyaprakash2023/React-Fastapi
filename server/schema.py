@@ -101,12 +101,12 @@ class OtherUser(BaseModel):
     dateOfBirth: Optional[date] = None
     userPic: Optional[str] = None  # Base64 encoded image
     profile_pic_type: Optional[str] = None
-    
+    status: Optional[str] = None  #
     class Config:
         orm_mode = True
     
     @classmethod
-    def from_orm(cls, user):
+    def from_orm(cls, user, status=None):
         user_dict = user.__dict__.copy()
         
         # Convert userPic from bytes to base64 string
@@ -126,6 +126,22 @@ class OtherUser(BaseModel):
         if user_dict.get("dateOfBirth") is not None and not isinstance(user_dict["dateOfBirth"], date):
             print(f"Warning: dateOfBirth is not a date object: {type(user_dict['dateOfBirth'])}")
             user_dict["dateOfBirth"] = None
-        
+
+        user_dict["status"] = status 
         return cls(**user_dict)
     
+from pydantic import BaseModel
+from typing import Optional
+from datetime import date
+
+class PublicUserProfile(BaseModel):
+    id: int
+    username: str
+    email: str
+    mobile_number: Optional[str] = None
+    dateOfBirth: Optional[date] = None
+    userPic: Optional[str] = None  # base64 string
+    profile_pic_type: Optional[str] = None
+
+    class Config:
+        orm_mode = True

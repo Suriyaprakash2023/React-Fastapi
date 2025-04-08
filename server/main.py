@@ -4,7 +4,7 @@ from model import User,Friendship,FriendshipStatus
 from database import SessionLocal,get_db
 from pydantic import BaseModel,EmailStr
 from sqlalchemy.orm import Session
-from schema import UserLogin,UserOut,OtherUser
+from schema import UserLogin,UserOut,OtherUser,PublicUserProfile
 from funtions import hash_password,verify_password,create_access_token,ACCESS_TOKEN_EXPIRE_MINUTES
 from  datetime import date
 import datetime
@@ -220,13 +220,25 @@ async def update_user(
 
 
 
-@app.get("/with-others", response_model=List[OtherUser])
-def get_other_users(
+@app.get("/others-user", response_model=List[OtherUser])
+async def get_other_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_user_from_token)
 ):
     users = db.query(User).filter(User.id != current_user.id).all()
-    return [OtherUser.from_orm(u) for u in users]  
+
+    output = []
+    for user in users:
+         # Check if there's a friendship between current_user and this user
+        friendship = db.query(Friendship).filter(
+            ((Friendship.sender_id == current_user.id) & (Friendship.receiver_id == user.id)) |
+            ((Friendship.sender_id == user.id) & (Friendship.receiver_id == current_user.id))
+        ).first()
+
+        status = friendship.status.value if friendship else None
+        output.append(OtherUser.from_orm(user, status=status))
+
+    return output
 
 
 @app.post("/send-request/{receiver_id}")
@@ -273,3 +285,31 @@ def cancel_friend_request(
     db.delete(request)
     db.commit()
     return {"message": "Request cancelled"}
+
+
+@app.get("/user-profile/{user_id}", response_model=PublicUserProfile)
+def get_user_profile(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Convert userPic from bytes to base64
+    user_dict = user.__dict__.copy()
+
+    if user_dict.get("userPic") and isinstance(user_dict["userPic"], bytes):
+        import base64
+        user_dict["userPic"] = base64.b64encode(user_dict["userPic"]).decode('utf-8')
+    
+    return PublicUserProfile(**user_dict)
+
+
+@app.get("/friend-requests", response_model=List[UserOut])
+def get_friend_requests(current_user: User = Depends(get_user_from_token), db: Session = Depends(get_db)):
+    incoming = (
+        db.query(User)
+        .join(Friendship, Friendship.sender_id == User.id)
+        .filter(Friendship.receiver_id == current_user.id)
+        .filter(Friendship.status == FriendshipStatus.send_request)
+        .all()
+    )
+    return incoming

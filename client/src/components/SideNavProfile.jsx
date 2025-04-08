@@ -63,7 +63,7 @@ const SideNavProfile = () => {
               </Link>
             </li>
             <li>
-              <Link to="/friends" className={`d-flex gap-4 ${location.pathname === '/friends' ? 'active' : ''}`}a className="d-flex gap-4">
+              <Link to="/friends" className={`d-flex gap-4 ${location.pathname === '/friends' ? 'active' : ''}`}>
                 <i className="material-symbols-outlined mat-icon">person</i>
                 <span>People</span>
               </Link>
