@@ -64,7 +64,7 @@ class UserOut(BaseModel):
                     # Encode bytes to base64 and decode to UTF-8 string
                     user_dict["userPic"] = base64.b64encode(user_dict["userPic"]).decode('utf-8')
                 else:
-                    print(f"Warning: userPic is not bytes, got {type(user_dict['userPic'])}")
+                    print(f"Warning: userPic is not bytes, got")
                     user_dict["userPic"] = None
             except Exception as e:
                 print(f"Error encoding userPic to base64: {e}")
@@ -92,6 +92,10 @@ class UserUpdate(BaseModel):
 
 
 
+import base64
+from typing import Optional
+from pydantic import BaseModel
+from datetime import date
 
 class OtherUser(BaseModel):
     id: int
@@ -101,34 +105,39 @@ class OtherUser(BaseModel):
     dateOfBirth: Optional[date] = None
     userPic: Optional[str] = None  # Base64 encoded image
     profile_pic_type: Optional[str] = None
-    status: Optional[str] = None  #
+    status: Optional[str] = None
+    role: Optional[str] = None  # 👈 role: sender or receiver
+
     class Config:
         orm_mode = True
-    
+
     @classmethod
-    def from_orm(cls, user, status=None):
+    def from_orm(cls, user, status=None, role=None):  # 👈 accept role
         user_dict = user.__dict__.copy()
-        
+
         # Convert userPic from bytes to base64 string
         if user_dict.get("userPic") is not None:
             try:
                 if isinstance(user_dict["userPic"], bytes):
-                    # Encode bytes to base64 and decode to UTF-8 string
                     user_dict["userPic"] = base64.b64encode(user_dict["userPic"]).decode('utf-8')
                 else:
-                    print(f"Warning: userPic is not bytes, got {type(user_dict['userPic'])}")
+                    print(f"Warning: userPic is not bytes, got ")
                     user_dict["userPic"] = None
             except Exception as e:
-                print(f"Error encoding userPic to base64: {e}")
+                print(f"Error encoding userPic to base64: ")
                 user_dict["userPic"] = None
-        
-        # Ensure dateOfBirth is in the correct format
+
+        # Validate dateOfBirth
         if user_dict.get("dateOfBirth") is not None and not isinstance(user_dict["dateOfBirth"], date):
-            print(f"Warning: dateOfBirth is not a date object: {type(user_dict['dateOfBirth'])}")
+            print(f"Warning: dateOfBirth is not a date object: ")
             user_dict["dateOfBirth"] = None
 
-        user_dict["status"] = status 
+        # ✅ Add status and role to the dict
+        user_dict["status"] = status
+        user_dict["role"] = role
+
         return cls(**user_dict)
+
     
 from pydantic import BaseModel
 from typing import Optional

@@ -229,16 +229,25 @@ async def get_other_users(
 
     output = []
     for user in users:
-         # Check if there's a friendship between current_user and this user
+        # Check if there's a friendship between current_user and this user
         friendship = db.query(Friendship).filter(
             ((Friendship.sender_id == current_user.id) & (Friendship.receiver_id == user.id)) |
             ((Friendship.sender_id == user.id) & (Friendship.receiver_id == current_user.id))
         ).first()
 
         status = friendship.status.value if friendship else None
-        output.append(OtherUser.from_orm(user, status=status))
+        role = None
+
+        if friendship:
+            if friendship.sender_id == current_user.id:
+                role = "sender"
+            elif friendship.receiver_id == current_user.id:
+                role = "receiver"
+
+        output.append(OtherUser.from_orm(user, status=status, role=role))
 
     return output
+
 
 
 @app.post("/send-request/{receiver_id}")
@@ -303,8 +312,11 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
     return PublicUserProfile(**user_dict)
 
 
-@app.get("/friend-requests", response_model=List[UserOut])
-def get_friend_requests(current_user: User = Depends(get_user_from_token), db: Session = Depends(get_db)):
+@app.get("/friend-requests", response_model=List[OtherUser])
+def get_friend_requests(
+    current_user: User = Depends(get_user_from_token),
+    db: Session = Depends(get_db)
+):
     incoming = (
         db.query(User)
         .join(Friendship, Friendship.sender_id == User.id)
@@ -312,4 +324,47 @@ def get_friend_requests(current_user: User = Depends(get_user_from_token), db: S
         .filter(Friendship.status == FriendshipStatus.send_request)
         .all()
     )
-    return incoming
+
+    return [OtherUser.from_orm(user, status="send_request", role="receiver") for user in incoming]
+
+@app.post("/accept-request")
+def accept_friend_request(
+    sender_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_user_from_token)
+):
+    friendship = db.query(Friendship).filter(
+        Friendship.sender_id == sender_id,
+        Friendship.receiver_id == current_user.id,
+        Friendship.status == FriendshipStatus.send_request
+    ).first()
+
+    if not friendship:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+
+    friendship.status = FriendshipStatus.accepted
+    db.commit()
+    db.refresh(friendship)
+
+    return {"message": "Friend request accepted"}
+
+
+@app.delete("/reject-request")
+def reject_friend_request(
+    sender_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_user_from_token)
+):
+    friendship = db.query(Friendship).filter(
+        Friendship.sender_id == sender_id,
+        Friendship.receiver_id == current_user.id,
+        Friendship.status == FriendshipStatus.send_request
+    ).first()
+
+    if not friendship:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+
+    db.delete(friendship)
+    db.commit()
+
+    return {"message": "Friend request rejected"}

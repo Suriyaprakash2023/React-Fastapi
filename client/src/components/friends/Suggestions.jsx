@@ -87,6 +87,54 @@ const fetchOtherUsers = async () => {
 
 
 
+  const acceptRequest = async (senderId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(`${BASE_URL}/accept-request`, {
+        sender_id: senderId,
+        status: "accepted",
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      setOtherUsers(prev =>
+        prev.map(user =>
+          user.id === senderId ? { ...user, status: "accepted", role: null } : user
+        )
+      );
+      setSuccessMessage("Friend request accepted!");
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error("Error accepting request:", err);
+    }
+  };
+  
+  const rejectRequest = async (senderId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${BASE_URL}/reject-request`,{
+        sender_id: senderId,
+        status: "rejected",
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      setOtherUsers(prev =>
+        prev.filter(user => user.id !== senderId)
+      );
+      setSuccessMessage("Friend request rejected.");
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error("Error rejecting request:", err);
+    }
+  };
+  
+
+
   if (loading) return <p>Loading...</p>;
 
   if (otherUsers.length === 0) {
@@ -138,27 +186,29 @@ const fetchOtherUsers = async () => {
 
                         <div className="d-center gap-2 mt-4">
                           {/* 👇 Conditional button rendering based on user.status */}
-                          {user.status === "send_request" ? (
-                            <button className="cmn-btn" style={{backgroundColor:"green"}} >
-                              <i className="material-symbols-outlined mat-icon fs-xl">check_circle</i>
-                              Sent
-                            </button>
-                          ) : user.status === "pending" || !user.status ? (
-                            <button className="cmn-btn" onClick={() => sendRequest(user.id)}>
-                              <i className="material-symbols-outlined mat-icon fs-xl">person_add</i>
-                              Add
-                            </button>
-                          ) : (
-                            <button className="cmn-btn alt" disabled>
-                              <i className="material-symbols-outlined mat-icon fs-xl">block</i>
-                              {user.status}
-                            </button>
-                          )}
+                          {user.status === "send_request" && user.role === "sender" ? (
+                              <>
+                                <button className="cmn-btn" style={{ backgroundColor: "green" }}>
+                                  <i className="material-symbols-outlined mat-icon fs-xl">check_circle</i>
+                                  Sent
+                                </button>
+                                <button className="cmn-btn alt" onClick={() => cancelRequest(user.id)}>Cancel</button>
+                              </>
+                              ) : user.status === "send_request" && user.role === "receiver" ? (
+                              <>
+                                <button className="cmn-btn" onClick={() => acceptRequest(user.id)}>
+                                  <i className="material-symbols-outlined mat-icon fs-xl">person_add</i>
+                                  Accept
+                                </button>
+                                <button className="cmn-btn alt" onClick={() => rejectRequest(user.id)}>Reject</button>
+                              </>
+                            ) : (
+                              <button className="cmn-btn" onClick={() => sendRequest(user.id)}>
+                                <i className="material-symbols-outlined mat-icon fs-xl">person_add</i>
+                                Add
+                              </button>
+                            )}
 
-                          {/* Optional Delete Button */}
-                          {user.status === "send_request" ? (
-                          <button className="cmn-btn alt" onClick={() => cancelRequest(user.id)}>Cancel</button>
-                          ) : null}
                         </div>
                       </div>
                     </div>

@@ -1,0 +1,17 @@
+[project]
+name = "memories-by-m7"
+version = "0.1.0"
+description = "A Django web project"
+requires-python = ">=3.9"
+dependencies = [
+    "django",
+    "djangorestframework",
+    "fastapi>=0.115.12",
+    "pillow",
+    "requests",
+    "uvicorn>=0.34.1",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

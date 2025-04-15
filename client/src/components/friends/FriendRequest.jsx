@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 const FriendRequest = () => {
 
     const [requests, setRequests] = useState([]);
-      
+
     useEffect(() => {
         const fetchRequests = async () => {
         try {
@@ -19,9 +19,10 @@ const FriendRequest = () => {
             },
             });
             setRequests(res.data);
+            console.log(res.data,"Friend Requests");
         } catch (err) {
             console.error("Failed to load friend requests:", err);
-        }
+            }
         };
     
         fetchRequests();
